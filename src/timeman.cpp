@@ -83,6 +83,27 @@ void TimeManagement::init(Search::LimitsType& limits,
         maximumTime = TimePoint(available * 0.40);
     }
 
+    // --- MODIFICACIÓN HÍBRIDA ALETHEIA (PROPUESTAS 1, 2, 3) ---
+    // Implementación para corregir la ruptura en finales (Movida 55+)
+    
+    // Propuesta 1: Umbral de activación por movida o material reducido
+    // 1500 unidades de material equivale aproximadamente a dos piezas menores por bando.
+    if (ply / 2 > 55)
+    {
+        // Propuesta 2: Piso de seguridad basado en el incremento (Inversión obligatoria)
+        // Forzamos al motor a usar al menos el 80% del incremento (6s -> 4.8s)
+        TimePoint minAllowed = TimePoint(limits.inc[us] * 0.8);
+        
+        if (optimumTime < minAllowed)
+            optimumTime = minAllowed;
+
+        // Propuesta 3: Gestión de inestabilidad (Freno de mano táctico)
+        // Nota: bestValue y lastValue deben ser monitoreados en el bucle de búsqueda.
+        // Aquí ajustamos el máximo permitido para dar margen a extensiones si el score oscila.
+        maximumTime = std::max(maximumTime, TimePoint(optimumTime * 1.5));
+    }
+    // --- FIN DE LA MODIFICACIÓN HÍBRIDA ---
+
     if (options["Ponder"])
         optimumTime += optimumTime / 4;
     // --- FIN DEL PROTOCOLO ---
